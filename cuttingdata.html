@@ -1285,7 +1285,7 @@
             .page-heading-subtitle { font-size: 11px; }
             .tab-sidebar-header { min-height: 54px; }
         }
-        #workspaceBot { display: none; position: fixed; right: 22px; bottom: 20px; z-index: 9000; font-family: inherit; }
+        #workspaceBot { display: none; position: fixed; right: 22px; bottom: 76px; z-index: 2147483000; font-family: inherit; }
         #workspaceBotToggle {
             display: flex;
             align-items: center;
@@ -1377,7 +1377,7 @@
         .shipment-import-row-error { margin-top: 8px; color: #b91c1c; font-size: 11px; }
         .shipment-import-preview-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
         @media (max-width: 520px) {
-            #workspaceBot { right: 12px; bottom: 12px; }
+            #workspaceBot { right: 12px; bottom: 76px; }
             #workspaceBotPanel { right: -2px; bottom: 62px; height: min(560px, calc(100vh - 92px)); min-height: 340px; }
             .shipment-import-card { padding: 13px; }
         }
@@ -1392,6 +1392,68 @@
             --accent: #0f766e;
             --accent-strong: #115e59;
             --accent-soft: #e7f3f2;
+        }
+        body[data-theme="indigo"] {
+            --page-bg: #f3f4fb;
+            --ink: #252d46;
+            --muted: #667085;
+            --line: #dde1ef;
+            --accent: #4f46e5;
+            --accent-strong: #3730a3;
+            --accent-soft: #eef2ff;
+            background: radial-gradient(circle at 4% 0%, #e5e7ff 0, transparent 28%), var(--page-bg);
+        }
+        body[data-theme="midnight"] {
+            --page-bg: #111827;
+            --surface: #1f2937;
+            --ink: #e5e7eb;
+            --muted: #aab4c3;
+            --line: #374151;
+            --accent: #38bdf8;
+            --accent-strong: #0ea5e9;
+            --accent-soft: #172b3a;
+            background: radial-gradient(circle at 4% 0%, #1e3a5f 0, transparent 30%), var(--page-bg);
+        }
+        body[data-theme="midnight"] .container,
+        body[data-theme="midnight"] .tab-container,
+        body[data-theme="midnight"] .form-section,
+        body[data-theme="midnight"] .size-inputs-grid,
+        body[data-theme="midnight"] .admin-box,
+        body[data-theme="midnight"] .info-card {
+            background: var(--surface);
+            color: var(--ink);
+        }
+        body[data-theme="midnight"] input,
+        body[data-theme="midnight"] select,
+        body[data-theme="midnight"] textarea {
+            background: #111827;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+        body[data-theme="midnight"] table,
+        body[data-theme="midnight"] th,
+        body[data-theme="midnight"] td {
+            border-color: #475569;
+        }
+        body[data-theme="midnight"] tr:nth-child(even) { background: #263448; }
+        .theme-selector {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 12px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .theme-selector select {
+            height: 32px;
+            min-width: 108px;
+            border: 1px solid rgba(255,255,255,.55);
+            border-radius: 8px;
+            background: rgba(255,255,255,.96);
+            color: #1e293b;
+            cursor: pointer;
+            font-size: 12px;
         }
         body {
             background: radial-gradient(circle at 4% 0%, #e5f1f2 0, transparent 28%), var(--page-bg);
@@ -1741,6 +1803,14 @@
         <div>
             Signed in as: <strong id="currentUserDisplay">User</strong> 
             <span id="roleBadge" class="role-badge badge-user">User</span>
+            <label class="theme-selector" for="themeSelector">
+                Theme
+                <select id="themeSelector" onchange="setApplicationTheme(this.value)" aria-label="Choose application theme">
+                    <option value="teal">Teal</option>
+                    <option value="indigo">Indigo</option>
+                    <option value="midnight">Midnight</option>
+                </select>
+            </label>
             <button class="btn btn-warning" onclick="logoutSystem()" style="margin-left:12px;">Sign Out</button>
             <button class="btn btn-search" onclick="forceLoginPrompt()" style="margin-left:8px;">Sign In Again</button>
         </div>
@@ -2643,6 +2713,7 @@ let workspaceBotVoiceAuto = false;
 let workspaceBotConversationContext = { buyer: '', style: '', color: '', item: '' };
 
 window.onload = async function() {
+    applySavedApplicationTheme();
     if(startupStorageErrors.length) {
         setLoginStatus(`Saved browser data could not be read (${startupStorageErrors.join(', ')}). Nothing was overwritten. Restore a valid backup or repair these browser storage entries, then reload.`, 'error');
         return;
@@ -2696,14 +2767,64 @@ window.onload = async function() {
     document.getElementById('shipmentImportFile').addEventListener('change', handleShipmentImportFile);
     document.getElementById('orderMilestoneAlerts').addEventListener('click', handleOrderMilestoneAlertAction);
 
-    currentRole = '';
-    localStorage.removeItem('currentRole');
-    document.getElementById('startupLoginModal').style.display = 'flex';
-    document.getElementById('mainAppContainer').style.display = 'none';
-    document.getElementById('workspaceBot').style.display = 'none';
-    document.getElementById('startupPassword').value = '';
-    document.getElementById('loginSubmitButton').disabled = false;
+    if(!restorePersistedLogin()) {
+        currentRole = '';
+        currentUsername = '';
+        currentAllowedTabs = [];
+        document.getElementById('startupLoginModal').style.display = 'flex';
+        document.getElementById('mainAppContainer').style.display = 'none';
+        document.getElementById('workspaceBot').style.display = 'none';
+        document.getElementById('startupPassword').value = '';
+        document.getElementById('loginSubmitButton').disabled = false;
+    }
 };
+
+function applySavedApplicationTheme() {
+    const savedTheme = localStorage.getItem('cuttingDataTheme');
+    setApplicationTheme(['teal', 'indigo', 'midnight'].includes(savedTheme) ? savedTheme : 'teal');
+}
+
+function setApplicationTheme(theme) {
+    const allowedTheme = ['teal', 'indigo', 'midnight'].includes(theme) ? theme : 'teal';
+    document.body.dataset.theme = allowedTheme;
+    localStorage.setItem('cuttingDataTheme', allowedTheme);
+    const selector = document.getElementById('themeSelector');
+    if(selector) selector.value = allowedTheme;
+}
+
+function clearPersistedLogin() {
+    localStorage.removeItem('currentRole');
+    localStorage.removeItem('currentUsername');
+}
+
+function restorePersistedLogin() {
+    const savedRole = localStorage.getItem('currentRole');
+    const savedUsername = localStorage.getItem('currentUsername');
+    if(!savedRole) return false;
+
+    const user = appUsers.find(item => {
+        const username = String(item.normalizedUsername || item.username || '').trim().toLowerCase();
+        return item.enabled !== false &&
+            (!savedUsername || username === savedUsername.trim().toLowerCase()) &&
+            item.role === savedRole;
+    }) || (savedUsername ? null : appUsers.find(item => item.enabled !== false && item.role === savedRole));
+
+    if(!user) {
+        clearPersistedLogin();
+        return false;
+    }
+
+    currentRole = user.role;
+    currentUsername = user.username;
+    currentAllowedTabs = getAllowedTabsForAccount(user);
+    localStorage.setItem('currentRole', currentRole);
+    localStorage.setItem('currentUsername', currentUsername);
+    document.getElementById('startupLoginModal').style.display = 'none';
+    document.getElementById('mainAppContainer').style.display = 'block';
+    document.getElementById('workspaceBot').style.display = 'block';
+    initAppAfterLogin();
+    return true;
+}
 
 function setLoginStatus(message, state = '') {
     const status = document.getElementById('loginStatus');
@@ -2891,6 +3012,7 @@ async function handleStartupLogin() {
     currentUsername = user.username;
     currentAllowedTabs = getAllowedTabsForAccount(user);
     localStorage.setItem('currentRole', currentRole);
+    localStorage.setItem('currentUsername', currentUsername);
     setLoginStatus('', '');
     document.getElementById('startupLoginModal').style.display = 'none';
     document.getElementById('mainAppContainer').style.display = 'block';
@@ -2899,13 +3021,13 @@ async function handleStartupLogin() {
 }
 
 function logoutSystem() {
-    localStorage.removeItem('currentRole');
+    clearPersistedLogin();
     currentUsername = '';
     location.reload();
 }
 
 function forceLoginPrompt() {
-    localStorage.removeItem('currentRole');
+    clearPersistedLogin();
     currentUsername = '';
     document.getElementById('startupLoginModal').style.display = 'flex';
     document.getElementById('mainAppContainer').style.display = 'none';
@@ -8681,7 +8803,7 @@ function renderAdminDashboardStats() {
 
 function resetCurrentSession() {
     if(!requireAdmin()) return;
-    localStorage.removeItem('currentRole');
+    clearPersistedLogin();
     location.reload();
 }
 
