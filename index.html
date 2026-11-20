@@ -9714,7 +9714,9 @@ function printSection(modeClass) {
     onSnapshot,
     query,
     orderBy,
-    serverTimestamp
+    serverTimestamp,
+    setDoc,
+    getDoc
   } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -9749,6 +9751,37 @@ function printSection(modeClass) {
       renderTableFn(list);
     });
   };
+    const syncDocRef = doc(db, "cutting_app_state", "shared_state");
+
+window.syncToCloudNow = async function () {
+  try {
+    await setDoc(syncDocRef, {
+      shipmentDB: typeof shipmentDB !== "undefined" ? shipmentDB : [],
+      cuttingHistory: typeof cuttingHistory !== "undefined" ? cuttingHistory : [],
+      itemCuttingHistory: typeof itemCuttingHistory !== "undefined" ? itemCuttingHistory : [],
+      itemSizeOrderDB: typeof itemSizeOrderDB !== "undefined" ? itemSizeOrderDB : [],
+      receivedDB: typeof receivedDB !== "undefined" ? receivedDB : [],
+      requisitionDB: typeof requisitionDB !== "undefined" ? requisitionDB : [],
+      masterFabricDB: typeof masterFabricDB !== "undefined" ? masterFabricDB : [],
+      appUsers: typeof appUsers !== "undefined" ? appUsers : [],
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (err) {
+    console.error("Cloud sync error:", err);
+  }
+};
+
+window.loadFromCloudNow = async function () {
+  try {
+    const snap = await getDoc(syncDocRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+  } catch (err) {
+    console.error("Cloud load error:", err);
+  }
+  return null;
+};
 </script>
 </body>
 </html>
