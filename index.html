@@ -5894,7 +5894,9 @@ function saveData() {
     localStorage.setItem('masterFabricDB_v1', JSON.stringify(masterFabricDB));
     localStorage.setItem('requisitionDB_v2', JSON.stringify(requisitionDB));
     localStorage.setItem('receiveDB_v1', JSON.stringify(receiveDB));
-}
+if (typeof window.syncToCloudNow === "function") {
+    window.syncToCloudNow();
+  }}
 
 function getOrderCutQuantities() {
     const quantities = new Map(shipmentDB.map(order => [String(order.id), { total: 0, sizes: {} }]));
