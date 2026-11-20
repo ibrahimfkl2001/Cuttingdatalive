@@ -2725,7 +2725,39 @@ window.onload = async function() {
         return;
     }
     migrateOrderMilestoneAlerts();
-    if(startupStorageErrors.length) {
+    if (typeof window.loadFromCloudNow === "function") {
+    const cloudData = await window.loadFromCloudNow();
+    if (cloudData) {
+      if (Array.isArray(cloudData.shipmentDB)) {
+        shipmentDB = cloudData.shipmentDB;
+        localStorage.setItem('shipmentDB_v3', JSON.stringify(shipmentDB));
+      }
+      if (Array.isArray(cloudData.cuttingHistory)) {
+        cuttingHistory = cloudData.cuttingHistory;
+        localStorage.setItem('cuttingHistory_v3', JSON.stringify(cuttingHistory));
+      }
+      if (Array.isArray(cloudData.itemCuttingHistory)) {
+        itemCuttingHistory = cloudData.itemCuttingHistory;
+        localStorage.setItem('itemCuttingHistory_v1', JSON.stringify(itemCuttingHistory));
+      }
+      if (Array.isArray(cloudData.itemSizeOrderDB)) {
+        itemSizeOrderDB = cloudData.itemSizeOrderDB;
+        localStorage.setItem('itemSizeOrderDB_v1', JSON.stringify(itemSizeOrderDB));
+      }
+      if (Array.isArray(cloudData.masterFabricDB)) {
+        masterFabricDB = cloudData.masterFabricDB;
+        localStorage.setItem('masterFabricDB_v1', JSON.stringify(masterFabricDB));
+      }
+      if (Array.isArray(cloudData.requisitionDB)) {
+        requisitionDB = cloudData.requisitionDB;
+        localStorage.setItem('requisitionDB_v2', JSON.stringify(requisitionDB));
+      }
+      if (Array.isArray(cloudData.receiveDB)) {
+        receiveDB = cloudData.receiveDB;
+        localStorage.setItem('receiveDB_v1', JSON.stringify(receiveDB));
+      }
+    }
+  }if(startupStorageErrors.length) {
         setLoginStatus(`Saved browser data could not be read (${startupStorageErrors.join(', ')}). Nothing was overwritten. Restore a valid backup or repair these browser storage entries, then reload.`, 'error');
         return;
     }
