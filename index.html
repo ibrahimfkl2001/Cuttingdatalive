@@ -9669,6 +9669,52 @@ function printSection(modeClass) {
 }
 </script>
 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    query,
+    orderBy,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyCDELoBbQdRYkk92V6HrwN1y98kNeF58wA",
+    authDomain: "cuttingdata-5e4d9.firebaseapp.com",
+    projectId: "cuttingdata-5e4d9",
+    storageBucket: "cuttingdata-5e4d9.firebasestorage.app",
+    messagingSenderId: "53032599179",
+    appId: "1:53032599179:web:cbf37745ab39b453999e8e",
+    measurementId: "G-V0JX0D36NN"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const cuttingCol = collection(db, "cutting_records");
+
+  window.cloudSaveData = async function (payload) {
+    return await addDoc(cuttingCol, {
+      ...payload,
+      createdAt: serverTimestamp()
+    });
+  };
+
+  window.cloudDeleteData = async function (docId) {
+    return await deleteDoc(doc(db, "cutting_records", docId));
+  };
+
+  window.cloudListenData = function (renderTableFn) {
+    const q = query(cuttingCol, orderBy("createdAt", "desc"));
+    return onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      renderTableFn(list);
+    });
+  };
+</script>
 </body>
 </html>
